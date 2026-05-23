@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfect ID Shuffler & Remover</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            width: 100%;
+            max-width: 550px;
+            background: #1e1e1e;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #4caf50;
+            font-size: 22px;
+        }
+        label {
+            font-size: 14px;
+            color: #bbb;
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        textarea {
+            width: 100%;
+            height: 180px;
+            background-color: #2d2d2d;
+            border: 1px solid #444;
+            border-radius: 8px;
+            color: #fff;
+            padding: 12px;
+            font-size: 15px;
+            resize: none;
+            margin-bottom: 15px;
+        }
+        textarea:focus, input:focus {
+            border-color: #4caf50;
+            outline: none;
+        }
+        .config-section {
+            background: #252525;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border: 1px solid #333;
+        }
+        .input-number {
+            width: 100%;
+            padding: 10px;
+            background-color: #2d2d2d;
+            border: 1px solid #444;
+            border-radius: 6px;
+            color: #fff;
+            font-size: 16px;
+            margin-top: 5px;
+        }
+        .btn-mix {
+            width: 100%;
+            padding: 12px;
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+            margin-bottom: 15px;
+        }
+        .btn-mix:hover {
+            background-color: #45a049;
+        }
+        .result-section {
+            display: none; /* শুরুতে লুকানো থাকবে */
+            background: #252525;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #333;
+        }
+        .btn-copy {
+            width: 100%;
+            padding: 10px;
+            background-color: #00bcd4;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+            margin-top: 10px;
+        }
+        .btn-copy:hover {
+            background-color: #0097a7;
+        }
+        .status-text {
+            font-size: 14px;
+            color: #81c784;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>ID Shuffler & Filter Tool 🔀</h2>
+    
+    <label for="idInput">১. এখানে সব আইডি পেস্ট করুন (প্রতি লাইনে একটি):</label>
+    <textarea id="idInput" placeholder="rahim.id1&#10;rahim.id2&#10;karim.id1&#10;babul.id1"></textarea>
+    
+    <div class="config-section">
+        <label for="removeCount">২. কতটি আইডি রিমোভ (বাদ) করতে চান? :</label>
+        <input type="number" id="removeCount" class="input-number" value="20" min="1">
+    </div>
+
+    <button class="btn-mix" onclick="processIDs()">মিক্স এবং রিমোভ করুন ⚡</button>
+
+    <div class="result-section" id="resultSection">
+        <div class="status-text" id="statusMessage"></div>
+        <label for="resultOutput">৩. ফাইনাল আইডি লিস্ট (বাদ পড়াগুলো ছাড়া বাকি আইডি):</label>
+        <textarea id="resultOutput" readonly></textarea>
+        <button class="btn-copy" id="copyBtn" onclick="copyToClipboard()">Copy Results (কপি করুন) 📋</button>
+    </div>
+</div>
+
+<script>
+    function processIDs() {
+        let inputData = document.getElementById("idInput").value;
+        let removeCountInput = document.getElementById("removeCount").value;
+        
+        // লাইন বাই লাইন আইডিগুলো অ্যারেতে নেওয়া
+        let idList = inputData.split('\n').map(id => id.trim()).filter(id => id !== "");
+        let removeCount = parseInt(removeCountInput);
+
+        // ভ্যালিডেশন চেক
+        if (idList.length === 0) {
+            alert("⚠️ দয়া করে আগে কিছু আইডি ইনপুট বক্সে পেস্ট করুন!");
+            return;
+        }
+        if (isNaN(removeCount) || removeCount < 0) {
+            alert("⚠️ দয়া করে রিমোভ করার জন্য একটি সঠিক সংখ্যা লিখুন!");
+            return;
+        }
+        if (idList.length <= removeCount) {
+            alert("⚠️ ফাইলে মোট আইডির সংখ্যা (" + idList.length + "), যা রিমোভ করার সংখ্যার চেয়ে কম বা সমান! রিমোভের সংখ্যা কমান।");
+            return;
+        }
+
+        let totalOriginal = idList.length;
+
+        // ⚡ ধাপ ১: পুরো লিস্টের সব আইডিকে আগে তাসের মতো ওলটপালট (Shuffle) করা
+        for (let i = idList.length - 1; i > 0; i--) {
+            let j = Math.floor(Math.random() * (i + 1));
+            [idList[i], idList[j]] = [idList[j], idList[i]]; 
+        }
+
+        // ⚡ 𝐌𝐀𝐆𝐈𝐂 𝐋𝐈𝐍𝐄: ওলটপালট হওয়া লিস্ট থেকে আপনার দেওয়া সংখ্যা অনুযায়ী আইডি চিরতরে কেটে ফেলা (Delete)
+        // .splice(0, removeCount) দিলে লিস্টের একদম শুরু থেকে ঐ কয়টি আইডি ডিলিট হয়ে যাবে
+        idList.splice(0, removeCount);
+
+        // ⚡ ধাপ ২: বাদ দেওয়ার পর অবশিষ্ট ফ্রেশ আইডিগুলো রেজাল্ট বক্সে সেট করা
+        document.getElementById("resultOutput").value = idList.join('\n');
+        
+        // স্ট্যাটাস মেসেজ আপডেট
+        document.getElementById("statusMessage").innerHTML = `✅ সফলভাবে মিক্স করার পর <b>${removeCount}টি আইডি সম্পূর্ণ বাদ দেওয়া হয়েছে!</b><br>বর্তমানে বক্সে মোট আইডি আছে: ${idList.length}টি (আগে ছিল: ${totalOriginal}টি)।`;
+        
+        // কপি বাটনের টেক্সট ও কালার আগের অবস্থায় আনা
+        document.getElementById("copyBtn").innerText = "Copy Results (কপি করুন) 📋";
+        document.getElementById("copyBtn").style.backgroundColor = "#00bcd4";
+
+        // রেজাল্ট সেকশনটি স্ক্রিনে দেখানো
+        document.getElementById("resultSection").style.display = "block";
+    }
+
+    // 📋 এক ক্লিকে কপি করার ফাংশন (যেখানে রিমোভ করা আইডিগুলো থাকবে না)
+    function copyToClipboard() {
+        let resultOutput = document.getElementById("resultOutput");
+        
+        resultOutput.select();
+        resultOutput.setSelectionRange(0, 99999); // মোবাইল ব্রাউজারের জন্য
+        
+        navigator.clipboard.writeText(resultOutput.value).then(() => {
+            let copyBtn = document.getElementById("copyBtn");
+            copyBtn.innerText = "Copied! (কপি হয়েছে) ✓";
+            copyBtn.style.backgroundColor = "#4caf50";
+        }).catch(err => {
+            alert("❌ কপি করতে সমস্যা হয়েছে, ম্যানুয়ালি সিলেক্ট করে কপি করুন।");
+        });
+    }
+</script>
+
+</body>
+</html>
